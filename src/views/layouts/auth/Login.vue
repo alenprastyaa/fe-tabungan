@@ -76,7 +76,7 @@ const handleLogin = async () => {
   errorMessage.value = '';
 
   try {
-    const baseUrl = 'https://alentest.my.id/tabungan';
+    const baseUrl = 'http://localhost:2100';
 
     const response = await fetch(`${baseUrl}/api/login`, {
       method: 'POST',

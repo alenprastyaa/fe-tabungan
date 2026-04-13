@@ -14,11 +14,11 @@
 
                 <div
                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border dark:border-gray-700 flex flex-wrap items-end gap-4">
-                    <div class="flex-1 min-w-[200px]">
+                    <!-- <div class="flex-1 min-w-[200px]">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Username</label>
                         <input v-model="searchQuery" type="text" placeholder="Ketik username..."
                             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" />
-                    </div>
+                    </div> -->
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tanggal
                             Lahir</label>
@@ -180,9 +180,6 @@
                                         required
                                         class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500 text-right tabular-nums" />
                                 </div>
-                                <p v-if="withdrawAmount" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    {{ formatRupiah(withdrawAmount) }}
-                                </p>
                             </div>
                             <div>
                                 <label
@@ -190,10 +187,22 @@
                                     Penalti (%)</label>
                                 <input v-model.number="penaltyPercent" type="number" min="0" max="100" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500" />
-                                <p v-if="withdrawAmount && penaltyPercent > 0" class="mt-1 text-xs text-red-500">
-                                    Potongan penalti: {{ formatRupiah(Math.floor(withdrawAmount * penaltyPercent / 100))
-                                    }}
-                                </p>
+
+                                <div v-if="withdrawAmount"
+                                    class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600 dark:text-gray-400">Potongan Penalti ({{
+                                            penaltyPercent }}%):</span>
+                                        <span class="text-red-600 dark:text-red-400 font-medium">-{{
+                                            formatRupiah(Math.floor(withdrawAmount * penaltyPercent / 100)) }}</span>
+                                    </div>
+                                    <div
+                                        class="flex justify-between text-sm font-bold border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
+                                        <span class="text-gray-800 dark:text-gray-200">Uang Diterima:</span>
+                                        <span class="text-green-600 dark:text-green-400">{{ formatRupiah(withdrawAmount
+                                            - Math.floor(withdrawAmount * penaltyPercent / 100)) }}</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="flex justify-end pt-4 space-x-3 border-t dark:border-gray-700 mt-6">
                                 <button type="button" @click="closeModal"
@@ -211,7 +220,7 @@
             <div v-if="showHistoryModal"
                 class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm px-4">
                 <div
-                    class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl overflow-hidden relative flex flex-col max-h-[90vh]">
+                    class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl overflow-hidden relative flex flex-col max-h-[90vh]">
                     <div class="px-6 py-4 border-b dark:border-gray-700 flex justify-between items-center shrink-0">
                         <h2 class="text-xl font-bold dark:text-white">Riwayat Transaksi: {{ selectedUser?.full_name ||
                             selectedUser?.username }}</h2>
@@ -223,7 +232,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                                 </svg>
-                                Cetak Riwayat
+                                Cetak Semua Riwayat
                             </button>
                             <button @click="closeModal"
                                 class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl font-bold">&times;</button>
@@ -279,6 +288,9 @@
                                         <th scope="col"
                                             class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                             Total Akhir</th>
+                                        <th scope="col"
+                                            class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+                                            Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -302,9 +314,15 @@
                                         <td
                                             class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
                                             {{ formatRupiah(history.final_amount) }}</td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
+                                            <button @click="reprintTransaction(history)"
+                                                class="text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 rounded-md text-xs font-medium transition-colors">
+                                                Cetak Ulang
+                                            </button>
+                                        </td>
                                     </tr>
                                     <tr v-if="historyData.length === 0">
-                                        <td colspan="5" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
+                                        <td colspan="6" class="px-4 py-10 text-center text-gray-500 dark:text-gray-400">
                                             Tidak ada riwayat transaksi ditemukan.</td>
                                     </tr>
                                 </tbody>
@@ -351,15 +369,16 @@
             </div>
         </div>
 
-        <div id="print-area" class="hidden print:block bg-white text-black font-sans p-8 w-full max-w-4xl mx-auto">
-            <div v-if="printMode === 'receipt' && receiptData" class="w-80 mx-auto border border-gray-300 p-6 rounded">
-                <div class="text-center mb-4 border-b pb-4">
-                    <h2 class="text-2xl font-bold uppercase">{{ receiptData.type === 'deposit' ? 'Bukti Setoran' :
-                        'Bukti Penarikan' }}</h2>
-                    <p class="text-sm text-gray-500 mt-1">Manajemen Tabungan App</p>
+        <div id="print-area" class="hidden print:block bg-white text-black font-sans w-full mx-auto">
+            <div v-if="printMode === 'receipt' && receiptData"
+                class="w-full mx-auto border border-gray-300 p-4 rounded">
+                <div class="text-center mb-3 border-b pb-3">
+                    <h2 class="text-lg font-bold uppercase">{{ receiptData.type === 'deposit' ? 'Bukti Setoran'
+                        : 'Bukti Penarikan' }}</h2>
+                    <p class="text-xs text-gray-500 mt-1">Manajemen Tabungan App</p>
                 </div>
 
-                <div class="space-y-2 text-sm mb-6">
+                <div class="space-y-1 text-xs mb-4">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Tanggal:</span>
                         <span class="font-medium">{{ formatDateTimeIndo(receiptData.date) }}</span>
@@ -369,64 +388,75 @@
                         <span class="font-medium">{{ receiptData.user }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-600">Tipe Transaksi:</span>
+                        <span class="text-gray-600">Tipe:</span>
                         <span class="font-medium">{{ receiptData.type === 'deposit' ? 'Setor Tunai' : 'Tarik Tunai'
-                        }}</span>
+                            }}</span>
                     </div>
                 </div>
 
-                <div class="border-t border-b py-3 mb-6 space-y-2">
-                    <div class="flex justify-between font-bold text-lg">
-                        <span>Nominal:</span>
+                <div class="border-t border-b border-black py-2 mb-4 space-y-1">
+                    <div class="flex justify-between font-bold text-sm">
+                        <span>{{ receiptData.type === 'deposit' ? 'Nominal Setor:' : 'Nominal Tarik:' }}</span>
                         <span>{{ formatRupiah(receiptData.amount) }}</span>
                     </div>
-                    <div v-if="receiptData.type === 'withdraw' && receiptData.penalty"
-                        class="flex justify-between text-sm text-gray-600">
-                        <span>Penalti ({{ receiptData.penalty }}%):</span>
-                        <span>Dipotong dari saldo</span>
+
+                    <div v-if="receiptData.type === 'withdraw' && receiptData.penaltyAmount > 0"
+                        class="flex justify-between text-xs text-gray-600">
+                        <span>Potongan Penalti ({{ receiptData.penaltyPercent }}%):</span>
+                        <span>-{{ formatRupiah(receiptData.penaltyAmount) }}</span>
+                    </div>
+
+                    <div v-if="receiptData.type === 'withdraw'"
+                        class="flex justify-between font-bold text-sm mt-1 border-t border-dashed border-gray-400 pt-1">
+                        <span>Uang Diterima:</span>
+                        <span>{{ formatRupiah(receiptData.receivedAmount) }}</span>
+                    </div>
+
+                    <div class="flex justify-between font-bold text-sm mt-2 border-t border-black pt-2">
+                        <span>Sisa Saldo:</span>
+                        <span>{{ formatRupiah(receiptData.finalBalance) }}</span>
                     </div>
                 </div>
 
-                <div class="text-center text-xs text-gray-500">
+                <div class="text-center text-[10px] text-gray-500">
                     <p>Terima kasih telah menggunakan layanan kami.</p>
                     <p class="mt-1">Struk ini adalah bukti transaksi yang sah.</p>
                 </div>
             </div>
 
             <div v-if="printMode === 'history' && selectedUser">
-                <div class="text-center mb-8 border-b-2 border-black pb-4">
-                    <h2 class="text-3xl font-bold uppercase mb-2">Riwayat Transaksi</h2>
-                    <p class="text-lg">Nama Nasabah: <strong>{{ selectedUser.full_name || selectedUser.username
-                    }}</strong></p>
-                    <p class="text-sm text-gray-600 mt-1">Dicetak pada: {{ formatDateTimeIndo(new Date().toISOString())
-                    }}</p>
+                <div class="text-center mb-4 border-b border-black pb-3">
+                    <h2 class="text-lg font-bold uppercase mb-1">Riwayat Transaksi</h2>
+                    <p class="text-sm">Nama Nasabah: <strong>{{ selectedUser.full_name || selectedUser.username
+                            }}</strong></p>
+                    <p class="text-sm">Total Saldo Terakhir: <strong>{{ formatRupiah(selectedUser.balance || 0)
+                            }}</strong></p>
+                    <p class="text-[10px] text-gray-600 mt-1">Dicetak pada: {{ formatDateTimeIndo(new
+                        Date().toISOString()) }}</p>
                 </div>
 
-                <table class="w-full text-left border-collapse border border-gray-400">
+                <table class="w-full text-left border-collapse border border-gray-400 text-xs">
                     <thead class="bg-gray-100">
                         <tr>
-                            <th class="border border-gray-400 px-4 py-2 font-bold">Tanggal & Waktu</th>
-                            <th class="border border-gray-400 px-4 py-2 font-bold">Tipe Transaksi</th>
-                            <th class="border border-gray-400 px-4 py-2 font-bold text-right">Nominal</th>
-                            <th class="border border-gray-400 px-4 py-2 font-bold text-right">Potongan Penalti</th>
-                            <th class="border border-gray-400 px-4 py-2 font-bold text-right">Total Transaksi Akhir</th>
+                            <th class="border border-gray-400 px-2 py-1 font-bold">Tgl & Waktu</th>
+                            <th class="border border-gray-400 px-2 py-1 font-bold">Tipe</th>
+                            <th class="border border-gray-400 px-2 py-1 font-bold text-right">Nominal</th>
+                            <th class="border border-gray-400 px-2 py-1 font-bold text-right">Total Akhir</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="history in historyData" :key="history.id">
-                            <td class="border border-gray-400 px-4 py-2">{{ formatDateTimeIndo(history.created_at) }}
-                            </td>
-                            <td class="border border-gray-400 px-4 py-2">{{ history.type === 'deposit' ? 'Setoran Masuk'
-                                : 'Penarikan Keluar' }}</td>
-                            <td class="border border-gray-400 px-4 py-2 text-right">{{ formatRupiah(history.amount) }}
-                            </td>
-                            <td class="border border-gray-400 px-4 py-2 text-right">{{ history.penalty_amount > 0 ?
-                                formatRupiah(history.penalty_amount) : '-' }}</td>
-                            <td class="border border-gray-400 px-4 py-2 text-right font-bold">{{
+                            <td class="border border-gray-400 px-2 py-1 text-[10px]">{{
+                                formatDateTimeIndo(history.created_at) }}</td>
+                            <td class="border border-gray-400 px-2 py-1 text-[10px]">{{ history.type === 'deposit' ?
+                                'Setor' : 'Tarik' }}</td>
+                            <td class="border border-gray-400 px-2 py-1 text-right text-[10px]">{{
+                                formatRupiah(history.amount) }}</td>
+                            <td class="border border-gray-400 px-2 py-1 text-right font-bold text-[10px]">{{
                                 formatRupiah(history.final_amount) }}</td>
                         </tr>
                         <tr v-if="historyData.length === 0">
-                            <td colspan="5" class="border border-gray-400 px-4 py-8 text-center italic text-gray-500">
+                            <td colspan="4" class="border border-gray-400 px-2 py-4 text-center italic text-gray-500">
                                 Tidak ada data transaksi.</td>
                         </tr>
                     </tbody>
@@ -441,7 +471,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 
 const token = localStorage.getItem('token');
-const baseUrl = 'https://alentest.my.id/tabungan';
+const baseUrl = 'http://localhost:2100';
 const router = useRouter()
 
 const balances = ref([]);
@@ -733,6 +763,7 @@ const submitDeposit = async () => {
         showMessage('Nominal setoran harus lebih dari 0', 'error');
         return;
     }
+
     isProcessing.value = true;
     try {
         const response = await fetch(`${baseUrl}/api/deposit`, {
@@ -753,7 +784,8 @@ const submitDeposit = async () => {
             type: 'deposit',
             user: selectedUser.value.full_name || selectedUser.value.username,
             amount: depositAmount.value,
-            date: new Date().toISOString()
+            date: new Date().toISOString(),
+            finalBalance: Number(selectedUser.value.balance) + Number(depositAmount.value)
         };
 
         showDepositModal.value = false;
@@ -793,12 +825,17 @@ const submitWithdraw = async () => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Gagal melakukan penarikan');
 
+        const penaltyAmount = Math.floor(withdrawAmount.value * (penaltyPercent.value / 100));
+
         receiptData.value = {
             type: 'withdraw',
             user: selectedUser.value.full_name || selectedUser.value.username,
             amount: withdrawAmount.value,
-            penalty: penaltyPercent.value,
-            date: new Date().toISOString()
+            penaltyPercent: penaltyPercent.value,
+            penaltyAmount: penaltyAmount,
+            receivedAmount: withdrawAmount.value - penaltyAmount,
+            date: new Date().toISOString(),
+            finalBalance: selectedUser.value.balance - withdrawAmount.value
         };
 
         showWithdrawModal.value = false;
@@ -809,6 +846,29 @@ const submitWithdraw = async () => {
     } finally {
         isProcessing.value = false;
     }
+};
+
+const reprintTransaction = (history) => {
+    let penaltyPct = 0;
+    if (history.type === 'withdraw' && history.penalty_amount > 0) {
+        penaltyPct = Math.round((history.penalty_amount / history.amount) * 100);
+    }
+
+    receiptData.value = {
+        type: history.type,
+        user: selectedUser.value.full_name || selectedUser.value.username,
+        amount: history.amount,
+        penaltyPercent: penaltyPct,
+        penaltyAmount: history.penalty_amount || 0,
+        receivedAmount: history.type === 'withdraw' ? (history.amount - (history.penalty_amount || 0)) : 0,
+        date: history.created_at,
+        finalBalance: history.balance || selectedUser.value.balance
+    };
+
+    printMode.value = 'receipt';
+    nextTick(() => {
+        window.print();
+    });
 };
 
 const printReceiptAction = () => {
@@ -848,10 +908,18 @@ onMounted(() => {
         width: 100%;
         margin: 0;
         padding: 0;
+        background-color: white !important;
+        color: black !important;
     }
 
     @page {
-        margin: 0.5cm;
+        size: A6 portrait;
+        margin: 5mm;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 }
 </style>
