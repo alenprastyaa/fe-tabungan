@@ -182,8 +182,8 @@ const fetchDashboardData = async () => {
   try {
     const token = localStorage.getItem("token");
     const endpoint = role === 'admin'
-      ? "http://localhost:2100/api/dashboard"
-      : "http://localhost:2100/api/user/dashboard";
+      ? "https://alentest.my.id/tabungan/api/dashboard"
+      : "https://alentest.my.id/tabungan/api/user/dashboard";
 
     const response = await fetch(endpoint, {
       method: "GET",

@@ -204,7 +204,7 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 const token = localStorage.getItem('token');
-const baseUrl = 'http://localhost:2100';
+const baseUrl = 'https://alentest.my.id/tabungan';
 const router = useRouter()
 
 const users = ref([]);

@@ -390,7 +390,7 @@
                     <div class="flex justify-between">
                         <span class="text-gray-600">Tipe:</span>
                         <span class="font-medium">{{ receiptData.type === 'deposit' ? 'Setor Tunai' : 'Tarik Tunai'
-                            }}</span>
+                        }}</span>
                     </div>
                 </div>
 
@@ -428,9 +428,9 @@
                 <div class="text-center mb-4 border-b border-black pb-3">
                     <h2 class="text-lg font-bold uppercase mb-1">Riwayat Transaksi</h2>
                     <p class="text-sm">Nama Nasabah: <strong>{{ selectedUser.full_name || selectedUser.username
-                            }}</strong></p>
+                    }}</strong></p>
                     <p class="text-sm">Total Saldo Terakhir: <strong>{{ formatRupiah(selectedUser.balance || 0)
-                            }}</strong></p>
+                    }}</strong></p>
                     <p class="text-[10px] text-gray-600 mt-1">Dicetak pada: {{ formatDateTimeIndo(new
                         Date().toISOString()) }}</p>
                 </div>
@@ -471,7 +471,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 
 const token = localStorage.getItem('token');
-const baseUrl = 'http://localhost:2100';
+const baseUrl = 'https://alentest.my.id/tabungan';
 const router = useRouter()
 
 const balances = ref([]);
