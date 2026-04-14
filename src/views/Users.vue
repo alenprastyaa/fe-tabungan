@@ -55,6 +55,8 @@
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
               Nama Lengkap</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
+              No. HP</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
               Alamat</th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
               Tanggal Lahir</th>
@@ -69,6 +71,8 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ user.username }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ user.full_name }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ user.phone || '-' }}
+            </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ user.address || '-' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{
@@ -122,6 +126,11 @@
                 <input v-model="newUser.dob" type="date" required
                   class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
               </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No. HP</label>
+              <input v-model="newUser.phone" type="tel"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alamat</label>
@@ -179,6 +188,11 @@
               </div>
             </div>
             <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">No. HP</label>
+              <input v-model="editUser.phone" type="tel"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            </div>
+            <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alamat</label>
               <textarea v-model="editUser.address" required rows="2"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
@@ -212,7 +226,6 @@ const isLoading = ref(true);
 const errorMessage = ref('');
 const globalSuccessMessage = ref('');
 
-// State untuk Form Add
 const showAddModal = ref(false);
 const isAdding = ref(false);
 const addErrorMessage = ref('');
@@ -221,10 +234,10 @@ const newUser = reactive({
   password: '',
   full_name: '',
   dob: '',
-  address: ''
+  address: '',
+  phone: ''
 });
 
-// State untuk Form Edit
 const showEditModal = ref(false);
 const isEditing = ref(false);
 const editErrorMessage = ref('');
@@ -234,7 +247,8 @@ const editUser = reactive({
   password: '',
   full_name: '',
   dob: '',
-  address: ''
+  address: '',
+  phone: ''
 });
 
 const searchQuery = reactive({
@@ -289,7 +303,6 @@ const fetchUsers = async () => {
   }
 };
 
-// SEARCH
 const handleSearch = async () => {
   if (!searchQuery.username && !searchQuery.dob) {
     return fetchUsers();
@@ -322,7 +335,6 @@ const handleSearch = async () => {
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || 'Terjadi kesalahan');
 
-    // Menangani kembalian baik berupa Array langsung maupun format object pagination { data: [...] }
     if (Array.isArray(data)) {
       users.value = data;
     } else if (data && Array.isArray(data.data)) {
@@ -351,11 +363,10 @@ const clearSearch = () => {
   searchQuery.dob = '';
 };
 
-// CREATE
 const closeModal = () => {
   showAddModal.value = false;
   addErrorMessage.value = '';
-  Object.assign(newUser, { username: '', password: '', full_name: '', dob: '', address: '' });
+  Object.assign(newUser, { username: '', password: '', full_name: '', dob: '', address: '', phone: '' });
 };
 
 const submitAddUser = async () => {
@@ -386,13 +397,13 @@ const submitAddUser = async () => {
   }
 };
 
-// UPDATE
 const openEditModal = (user) => {
   editUser.id = user.id;
   editUser.username = user.username;
   editUser.full_name = user.full_name;
   editUser.dob = formatToYYYYMMDD(user.dob);
   editUser.address = user.address;
+  editUser.phone = user.phone || '';
   editUser.password = '';
   editErrorMessage.value = '';
   showEditModal.value = true;
@@ -410,7 +421,8 @@ const submitEditUser = async () => {
   const payload = {
     full_name: editUser.full_name,
     dob: editUser.dob,
-    address: editUser.address
+    address: editUser.address,
+    phone: editUser.phone
   };
 
   if (editUser.password) {
@@ -440,7 +452,6 @@ const submitEditUser = async () => {
   }
 };
 
-// DELETE
 const confirmDelete = async (user) => {
   const isConfirmed = window.confirm(`Apakah Anda yakin ingin menghapus pengguna "${user.username}"? Tindakan ini tidak dapat dibatalkan.`);
 

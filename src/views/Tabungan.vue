@@ -14,11 +14,6 @@
 
                 <div
                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border dark:border-gray-700 flex flex-wrap items-end gap-4">
-                    <!-- <div class="flex-1 min-w-[200px]">
-                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Username</label>
-                        <input v-model="searchQuery" type="text" placeholder="Ketik username..."
-                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" />
-                    </div> -->
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tanggal
                             Lahir</label>
@@ -354,8 +349,30 @@
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold dark:text-white mb-2">Transaksi Berhasil!</h2>
-                    <p class="text-gray-500 dark:text-gray-400 text-sm mb-6">Dana telah berhasil diperbarui ke dalam
-                        sistem.</p>
+
+                    <div v-if="receiptData"
+                        class="bg-gray-50 dark:bg-gray-700 p-4 rounded-md mb-6 text-left w-full text-sm border dark:border-gray-600">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600 dark:text-gray-400">Jenis Transaksi:</span>
+                            <span class="font-semibold dark:text-white">
+                                {{ receiptData.type === 'deposit' ? 'Setor Tunai'
+                                    : 'Tarik Tunai' }}</span>
+                        </div>
+                        <div class="flex justify-between mb-2">
+                            <span class="text-gray-600 dark:text-gray-400">Nominal:</span>
+                            <span
+                                :class="receiptData.type === 'deposit' ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'"
+                                class="font-semibold">
+                                {{ receiptData.type === 'deposit' ? '+' : '-' }} {{ formatRupiah(receiptData.amount ||
+                                    0) }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+                            <span class="text-gray-600 dark:text-gray-400">Total Saldo:</span>
+                            <span class="font-bold text-lg dark:text-white">{{ formatRupiah(receiptData.finalBalance ||
+                                0) }}</span>
+                        </div>
+                    </div>
 
                     <div class="flex gap-3 justify-center">
                         <button @click="closeModal"
@@ -780,16 +797,26 @@ const submitDeposit = async () => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Gagal melakukan setoran');
 
+        const newBalance = Number(selectedUser.value.balance) + Number(depositAmount.value);
+
         receiptData.value = {
             type: 'deposit',
             user: selectedUser.value.full_name || selectedUser.value.username,
             amount: depositAmount.value,
             date: new Date().toISOString(),
-            finalBalance: Number(selectedUser.value.balance) + Number(depositAmount.value)
+            finalBalance: newBalance
         };
+
+        const userIndex = balances.value.findIndex(u => u.user_id === selectedUser.value.user_id);
+        if (userIndex !== -1) {
+            balances.value[userIndex].balance = newBalance;
+        }
 
         showDepositModal.value = false;
         showReceiptModal.value = true;
+
+        showMessage(`Setoran senilai ${formatRupiah(depositAmount.value)} berhasil ditambahkan!`, 'success');
+
         fetchBalances();
     } catch (error) {
         showMessage(error.message, 'error');
@@ -826,6 +853,7 @@ const submitWithdraw = async () => {
         if (!response.ok) throw new Error(result.message || 'Gagal melakukan penarikan');
 
         const penaltyAmount = Math.floor(withdrawAmount.value * (penaltyPercent.value / 100));
+        const newBalance = Number(selectedUser.value.balance) - Number(withdrawAmount.value);
 
         receiptData.value = {
             type: 'withdraw',
@@ -835,11 +863,19 @@ const submitWithdraw = async () => {
             penaltyAmount: penaltyAmount,
             receivedAmount: withdrawAmount.value - penaltyAmount,
             date: new Date().toISOString(),
-            finalBalance: selectedUser.value.balance - withdrawAmount.value
+            finalBalance: newBalance
         };
+
+        const userIndex = balances.value.findIndex(u => u.user_id === selectedUser.value.user_id);
+        if (userIndex !== -1) {
+            balances.value[userIndex].balance = newBalance;
+        }
 
         showWithdrawModal.value = false;
         showReceiptModal.value = true;
+
+        showMessage(`Penarikan senilai ${formatRupiah(withdrawAmount.value)} berhasil!`, 'success');
+
         fetchBalances();
     } catch (error) {
         showMessage(error.message, 'error');
