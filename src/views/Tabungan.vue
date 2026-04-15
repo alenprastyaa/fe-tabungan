@@ -14,6 +14,12 @@
 
                 <div
                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6 border dark:border-gray-700 flex flex-wrap items-end gap-4">
+                    <!-- <div class="flex-1 min-w-[200px]">
+                        <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Cari Username /
+                            Nama</label>
+                        <input v-model="searchQuery" type="text" placeholder="Masukkan keyword..."
+                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors" />
+                    </div> -->
                     <div class="flex-1 min-w-[200px]">
                         <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tanggal
                             Lahir</label>
@@ -66,7 +72,7 @@
                                     class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                        {{ index + 1 }}</td>
+                                        {{ index + 1 + ((currentPage - 1) * currentLimit) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{
                                         item.username || '-' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{
@@ -99,8 +105,8 @@
                         class="px-6 py-4 border-t dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800">
                         <button @click="prevPage" :disabled="currentPage === 1"
                             class="px-4 py-2 border rounded-md text-sm disabled:opacity-50 dark:text-white dark:border-gray-600">Sebelumnya</button>
-                        <span class="text-sm dark:text-white">Halaman {{ currentPage }}</span>
-                        <button @click="nextPage" :disabled="balances.length < currentLimit || balances.length === 0"
+                        <span class="text-sm dark:text-white">Halaman {{ currentPage }} dari {{ totalPages }}</span>
+                        <button @click="nextPage" :disabled="currentPage >= totalPages"
                             class="px-4 py-2 border rounded-md text-sm disabled:opacity-50 dark:text-white dark:border-gray-600">Selanjutnya</button>
                     </div>
                 </div>
@@ -501,6 +507,8 @@ const searchDob = ref('');
 
 const currentPage = ref(1);
 const currentLimit = ref(10);
+const totalPages = ref(1);
+const totalItems = ref(0);
 
 const selectedUser = ref(null);
 const isProcessing = ref(false);
@@ -601,23 +609,21 @@ const showMessage = (msg, type = 'success') => {
 const fetchBalances = async () => {
     isLoading.value = true;
     try {
-        let url;
+        const url = new URL(`${baseUrl}/api/admin/balances`);
 
-        if (searchQuery.value || searchDob.value) {
-            const searchUrl = new URL(`${baseUrl}/api/users/search`);
-            if (searchQuery.value) {
-                searchUrl.searchParams.append('username', searchQuery.value);
-            }
-            if (searchDob.value) {
-                const [year, month, day] = searchDob.value.split('-');
-                searchUrl.searchParams.append('dob', `${day}-${month}-${year}`);
-            }
-            url = searchUrl.toString();
-        } else {
-            url = `${baseUrl}/api/admin/balances?page=${currentPage.value}&limit=${currentLimit.value}`;
+        url.searchParams.append('page', currentPage.value);
+        url.searchParams.append('limit', currentLimit.value);
+
+        if (searchQuery.value) {
+            url.searchParams.append('search', searchQuery.value);
         }
 
-        const response = await fetch(url, {
+        if (searchDob.value) {
+            const [year, month, day] = searchDob.value.split('-');
+            url.searchParams.append('dob', `${day}-${month}-${year}`);
+        }
+
+        const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -636,15 +642,15 @@ const fetchBalances = async () => {
 
         balances.value = data.data || (Array.isArray(data) ? data : []);
 
-        if (data.page) {
-            currentPage.value = data.page;
-        }
+        if (data.page) currentPage.value = data.page;
+        if (data.total_pages) totalPages.value = data.total_pages;
+        if (data.total) totalItems.value = data.total;
 
     } catch (error) {
         showMessage(error.message, 'error');
         router.push({
             name: "Login"
-        })
+        });
     } finally {
         isLoading.value = false;
     }
@@ -665,8 +671,10 @@ const resetSearch = () => {
 };
 
 const nextPage = () => {
-    currentPage.value++;
-    fetchBalances();
+    if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+        fetchBalances();
+    }
 };
 
 const prevPage = () => {
