@@ -183,25 +183,30 @@
                                 </div>
                             </div>
                             <div>
-                                <label
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Persentase
-                                    Penalti (%)</label>
-                                <input v-model.number="penaltyPercent" type="number" min="0" max="100" required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-900 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-1 focus:ring-orange-500" />
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Skema
+                                    Potongan Otomatis</label>
+                                <div
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                    <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
+                                        {{ withdrawAmount < 1000000 ? 'Di bawah Rp1.000.000: potongan Rp5.000' : 'Rp1.000.000 ke atas: potongan 1%' }}
+                                    </p>
+                                    <p v-if="withdrawAmount" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                        Persentase efektif: {{ formatPercent(effectivePenaltyPercent) }}%
+                                    </p>
+                                </div>
 
                                 <div v-if="withdrawAmount"
                                     class="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md border border-gray-200 dark:border-gray-600">
                                     <div class="flex justify-between text-sm mb-1">
                                         <span class="text-gray-600 dark:text-gray-400">Potongan Penalti ({{
-                                            penaltyPercent }}%):</span>
+                                            formatPercent(effectivePenaltyPercent) }}%):</span>
                                         <span class="text-red-600 dark:text-red-400 font-medium">-{{
-                                            formatRupiah(Math.floor(withdrawAmount * penaltyPercent / 100)) }}</span>
+                                            formatRupiah(withdrawPenaltyAmount) }}</span>
                                     </div>
                                     <div
                                         class="flex justify-between text-sm font-bold border-t border-gray-200 dark:border-gray-600 pt-2 mt-2">
                                         <span class="text-gray-800 dark:text-gray-200">Uang Diterima:</span>
-                                        <span class="text-green-600 dark:text-green-400">{{ formatRupiah(withdrawAmount
-                                            - Math.floor(withdrawAmount * penaltyPercent / 100)) }}</span>
+                                        <span class="text-green-600 dark:text-green-400">{{ formatRupiah(withdrawReceivedAmount) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -425,7 +430,7 @@
 
                     <div v-if="receiptData.type === 'withdraw' && receiptData.penaltyAmount > 0"
                         class="flex justify-between text-xs text-gray-600">
-                        <span>Potongan Penalti ({{ receiptData.penaltyPercent }}%):</span>
+                        <span>Potongan Penalti ({{ formatPercent(receiptData.penaltyPercent) }}%):</span>
                         <span>-{{ formatRupiah(receiptData.penaltyAmount) }}</span>
                     </div>
 
@@ -518,7 +523,6 @@ const depositAmount = ref(0);
 
 const showWithdrawModal = ref(false);
 const withdrawAmount = ref(0);
-const penaltyPercent = ref(0);
 
 const showHistoryModal = ref(false);
 const historyData = ref([]);
@@ -555,8 +559,30 @@ const formatNumberInput = (value) => {
     return new Intl.NumberFormat('id-ID').format(num);
 };
 
+const formatPercent = (value) => {
+    if (!Number.isFinite(value)) return '0';
+    return new Intl.NumberFormat('id-ID', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(value);
+};
+
 const depositAmountFormatted = computed(() => formatNumberInput(depositAmount.value));
 const withdrawAmountFormatted = computed(() => formatNumberInput(withdrawAmount.value));
+const effectivePenaltyPercent = computed(() => {
+    if (!withdrawAmount.value || withdrawAmount.value <= 0) return 0;
+    if (withdrawAmount.value < 1000000) return (5000 / withdrawAmount.value) * 100;
+    return 1;
+});
+const withdrawPenaltyAmount = computed(() => {
+    if (!withdrawAmount.value || withdrawAmount.value <= 0) return 0;
+    if (withdrawAmount.value < 1000000) return 5000;
+    return Math.floor(withdrawAmount.value * 0.01);
+});
+const withdrawReceivedAmount = computed(() => {
+    if (!withdrawAmount.value || withdrawAmount.value <= 0) return 0;
+    return withdrawAmount.value - withdrawPenaltyAmount.value;
+});
 
 const onDepositInput = (e) => {
     const raw = e.target.value.replace(/\D/g, '');
@@ -692,7 +718,6 @@ const closeModal = () => {
     selectedUser.value = null;
     depositAmount.value = 0;
     withdrawAmount.value = 0;
-    penaltyPercent.value = 0;
 };
 
 const openDepositModal = (user) => {
@@ -704,7 +729,6 @@ const openDepositModal = (user) => {
 const openWithdrawModal = (user) => {
     selectedUser.value = user;
     withdrawAmount.value = 0;
-    penaltyPercent.value = 0;
     showWithdrawModal.value = true;
 };
 
@@ -838,6 +862,10 @@ const submitWithdraw = async () => {
         showMessage('Nominal penarikan harus lebih dari 0', 'error');
         return;
     }
+    if (withdrawAmount.value <= withdrawPenaltyAmount.value) {
+        showMessage('Nominal penarikan harus lebih besar dari potongan penalti', 'error');
+        return;
+    }
     if (withdrawAmount.value > selectedUser.value.balance) {
         showMessage('Saldo tidak mencukupi untuk penarikan ini', 'error');
         return;
@@ -854,22 +882,22 @@ const submitWithdraw = async () => {
             body: JSON.stringify({
                 user_id: selectedUser.value.user_id,
                 amount: withdrawAmount.value,
-                penalty_percent: penaltyPercent.value
+                penalty_percent: effectivePenaltyPercent.value
             })
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Gagal melakukan penarikan');
 
-        const penaltyAmount = Math.floor(withdrawAmount.value * (penaltyPercent.value / 100));
+        const penaltyAmount = withdrawPenaltyAmount.value;
         const newBalance = Number(selectedUser.value.balance) - Number(withdrawAmount.value);
 
         receiptData.value = {
             type: 'withdraw',
             user: selectedUser.value.full_name || selectedUser.value.username,
             amount: withdrawAmount.value,
-            penaltyPercent: penaltyPercent.value,
+            penaltyPercent: effectivePenaltyPercent.value,
             penaltyAmount: penaltyAmount,
-            receivedAmount: withdrawAmount.value - penaltyAmount,
+            receivedAmount: withdrawReceivedAmount.value,
             date: new Date().toISOString(),
             finalBalance: newBalance
         };

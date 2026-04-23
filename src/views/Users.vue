@@ -264,13 +264,27 @@ const formatToDDMMYYYY = (dateString) => {
 
 const formatToYYYYMMDD = (dateString) => {
   if (!dateString) return '';
+
+  if (typeof dateString === 'string') {
+    const normalizedDate = dateString.includes('T') ? dateString.split('T')[0] : dateString;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedDate)) return normalizedDate;
+  }
+
   const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const formatTanggalIndo = (dateString) => {
   if (!dateString) return '-';
-  const date = new Date(dateString);
+  const normalizedDate = formatToYYYYMMDD(dateString);
+
+  if (!normalizedDate) return '-';
+
+  const [year, month, day] = normalizedDate.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
