@@ -54,6 +54,16 @@
             </router-link>
           </div>
 
+          <div class="item mt-3" v-if="role === 'admin'">
+            <router-link to="/settings"
+              class="w-full flex text-left rounded-md box-border p-3 hover:bg-gray-200 dark:hover:bg-gray-700">
+              <span class="mr-3 text-xl">
+                <Icon icon="heroicons:cog-6-tooth" />
+              </span>
+              <span class="w-full"> Setting </span>
+            </router-link>
+          </div>
+
         </div>
       </div>
     </div>

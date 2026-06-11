@@ -15,6 +15,7 @@ import Login from "../views/layouts/auth/Login.vue";
 import Register from "../views/layouts/auth/Register.vue";
 import ForgotPassword from "../views/layouts/auth/forgot-password.vue";
 import Users from "../views/Users.vue"; // Import the new Users component
+import Settings from "../views/Settings.vue";
 
 // layouts
 import Blank from "../views/layouts/Blank.vue";
@@ -47,6 +48,12 @@ const routes = [
     name: "Tabungans",
     component: Tabungan,
     meta: { title: "Tabungan " + appname },
+  },
+  {
+    path: "/settings",
+    name: "Settings",
+    component: Settings,
+    meta: { title: "Settings " + appname },
   },
 
   // Components based Routes
