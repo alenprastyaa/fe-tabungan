@@ -505,7 +505,7 @@
                                                     formatRupiah(history.penalty_amount) : '-' }}</td>
                                             <td
                                                 class="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-gray-900 dark:text-white tabular-nums">
-                                                {{ formatRupiah(history.final_amount) }}</td>
+                                                {{ formatRupiah(getHistoryFinalBalance(history)) }}</td>
                                             <td class="px-4 py-3 whitespace-nowrap text-sm text-center">
                                                 <button @click="reprintTransaction(history)"
                                                     class="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors">
@@ -555,7 +555,7 @@
                                             class="flex justify-between pt-1.5 mt-1.5 border-t border-gray-100 dark:border-gray-700">
                                             <span class="text-gray-500 dark:text-gray-400">Total Akhir</span>
                                             <span class="font-bold text-gray-900 dark:text-white tabular-nums">{{
-                                                formatRupiah(history.final_amount) }}</span>
+                                                formatRupiah(getHistoryFinalBalance(history)) }}</span>
                                         </div>
                                     </div>
                                     <button @click="reprintTransaction(history)"
@@ -723,7 +723,7 @@
                             <td class="border border-gray-400 px-2 py-1 text-right text-[10px]">{{
                                 formatRupiah(history.amount) }}</td>
                             <td class="border border-gray-400 px-2 py-1 text-right font-bold text-[10px]">{{
-                                formatRupiah(history.final_amount) }}</td>
+                                formatRupiah(getHistoryFinalBalance(history)) }}</td>
                         </tr>
                         <tr v-if="historyData.length === 0">
                             <td colspan="4" class="border border-gray-400 px-2 py-4 text-center italic text-gray-500">
@@ -816,6 +816,14 @@ const formatRupiah = (angka) => {
         currency: 'IDR',
         minimumFractionDigits: 0
     }).format(angka);
+};
+
+const getHistoryFinalBalance = (history) => {
+    return Number(history?.balance ?? history?.final_amount ?? 0);
+};
+
+const getHistoryReceivedAmount = (history) => {
+    return Number(history?.received_amount ?? (Number(history?.amount || 0) - Number(history?.penalty_amount || 0)));
 };
 
 const formatNumberInput = (value) => {
@@ -1010,7 +1018,7 @@ const fetchHistory = async () => {
         const params = new URLSearchParams({
             page: historyMeta.value.page,
             limit: historyMeta.value.limit,
-            search: selectedUser.value.username
+            user_id: selectedUser.value.user_id
         });
 
         if (historyFilters.value.type) {
@@ -1291,7 +1299,7 @@ const buildHistoryPrintHtml = () => {
                 <td>${escapeHtml(formatDateTimeIndo(history.created_at))}</td>
                 <td>${history.type === 'deposit' ? 'Setor' : 'Tarik'}</td>
                 <td class="right">${escapeHtml(formatRupiah(Number(history.amount || 0)))}</td>
-                <td class="right"><strong>${escapeHtml(formatRupiah(Number(history.final_amount || 0)))}</strong></td>
+                <td class="right"><strong>${escapeHtml(formatRupiah(getHistoryFinalBalance(history)))}</strong></td>
             </tr>
         `).join('')
         : '<tr><td colspan="4" class="center">Tidak ada data transaksi.</td></tr>';
@@ -1329,9 +1337,9 @@ const reprintTransaction = async (history) => {
         amount: history.amount,
         penaltyPercent: penaltyPct,
         penaltyAmount: history.penalty_amount || 0,
-        receivedAmount: history.type === 'withdraw' ? (history.amount - (history.penalty_amount || 0)) : 0,
+        receivedAmount: history.type === 'withdraw' ? getHistoryReceivedAmount(history) : 0,
         date: history.created_at,
-        finalBalance: history.balance || selectedUser.value.balance
+        finalBalance: getHistoryFinalBalance(history)
     };
 
     printMode.value = 'receipt';
